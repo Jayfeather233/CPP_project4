@@ -23,7 +23,6 @@ Mat matmul_plain(const Mat a,const Mat b){
     }
     ans.m=a.m;
     ans.n=b.n;
-    //ans.data=(float*)(aligned_alloc(256,sizeof(float)*a.m*b.n));
     ans.data=(float*)malloc(sizeof(float)*a.m*b.n);
     size_t kk;
     for(size_t i=0;i<a.m;i++){
@@ -52,6 +51,7 @@ float vectormul(float *p1,float *p2,size_t nSize){
 }
 Mat matmul_improved(const Mat a,const Mat b){
 #ifdef WITH_AVX2
+#ifdef _OPENMP
     Mat ans;
     if(a.n!=b.m){
         printf("Can not multiply.\n");
@@ -74,6 +74,12 @@ Mat matmul_improved(const Mat a,const Mat b){
         }
     }
     return ans;
+#else
+    printf("No OpenMP support.\n");
+    Mat ans;
+    ans.n=ans.m=-1;
+    return ans;
+#endif
 #else
     printf("No AVX support.\n");
     Mat ans;
