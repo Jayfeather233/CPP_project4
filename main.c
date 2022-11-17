@@ -3,6 +3,8 @@
 #include <time.h>
 #include "matmul.h"
 
+//This code is just for test.
+
 #define TIME_START clock_gettime(CLOCK_REALTIME,&start);
 #define TIME_END(NAME) clock_gettime(CLOCK_REALTIME,&end);\
         printf("%s: %ldms\n",NAME, (end.tv_sec-start.tv_sec)*1000+(end.tv_nsec-start.tv_nsec)/1000000);
@@ -13,10 +15,12 @@ int main(){
     struct timespec start,end;
     int mod1,mod2,mod3;//mod1:预热 mod2:比较 mod3:输出
 
-    printf("Input:M N Preheat:0/1 compare:0/1 output:0/1");
+    printf("Input:M N Preheat:0/1 compare:0/1 output:0/1\n");
     if(scanf("%d%d%d%d%d",&N,&M,&mod1,&mod2,&mod3)==EOF) return 1;
 
     srand(time(0));
+
+    /// generate random data 
     TIME_START
     Mat a=newmat_aligned(N,M);
     Mat b=newmat_aligned(N,M);
@@ -27,7 +31,7 @@ int main(){
     TIME_END("generate");
 
     Mat c1,c2;
-    if(mod2){
+    if(mod2){//The plain method
         if(mod1){
             c1=matmul_plain(a,b);
             mat_free(c1);
@@ -39,6 +43,7 @@ int main(){
         TIME_END("plain")
     }
 
+    //improved method
     if(mod1){
         c2=matmul_improved(a,b);
         mat_free(c2);
@@ -49,11 +54,12 @@ int main(){
     c2=matmul_improved(a,b);
     TIME_END("improved");
     
-    if(mod3){
+    
+    if(mod3){//output
         moutput(c1);
         moutput(c2);
     }
-    if(mod2){
+    if(mod2){//compare
         int flg=1;
         for(int i=0;i<N*M&&flg;i++){
             flg&=c1.data[i]==c2.data[i];
