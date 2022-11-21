@@ -35,39 +35,36 @@ Mat matmul_plain(const Mat a,const Mat b){
     }
     return ans;
 }
-float vectormul(float *p1,float *p2,size_t nSize){
+inline float vectormul(float *p1,float *p2,size_t nSize){
 #ifdef WITH_AVX2
-    float *sum=(float*)aligned_alloc(sizeof(float)*8,sizeof(float)*nSize);
+    float sum[8];
     __m256 c = _mm256_setzero_ps();
-    for (size_t i = 0; i < nSize; i+=8){
+    for (register size_t i = 0; i < nSize; i+=8){
         c =  _mm256_add_ps(c, _mm256_mul_ps(_mm256_load_ps(p1 + i), _mm256_load_ps(p2 + i)));
     }
     _mm256_store_ps(sum, c);
-    float ans = sum[0]+sum[1]+sum[2]+sum[3]+sum[4]+sum[5]+sum[6]+sum[7];
-    free(sum);
-    return ans;
+    return sum[0]+sum[1]+sum[2]+sum[3]+sum[4]+sum[5]+sum[6]+sum[7];
 #else
 #ifdef WITH_NEON
-    float *sum=(float*)aligned_alloc(sizeof(float)*4,sizeof(float)*nSize);
+    float sum[4];
     float32x4_t a, b;
     float32x4_t c = vdupq_n_f32(0);
 
-    for (size_t i = 0; i < nSize; i+=4)
+    for (register size_t i = 0; i < nSize; i+=4)
     {
         a = vld1q_f32(p1 + i);
         b = vld1q_f32(p2 + i);
         c = vaddq_f32(c, vmulq_f32(a, b));
     }
     vst1q_f32(sum, c);
-    float ans = sum[0]+sum[1]+sum[2]+sum[3];
-    free(sum);
-    return ans;
+    return sum[0]+sum[1]+sum[2]+sum[3];
 #else
     return 0;
 #endif
 #endif
 }
 Mat matmul_improved(const Mat a,const Mat b){
+    register size_t i,j;
 #ifdef WITH_AVX2
 #ifdef _OPENMP
     Mat ans;
@@ -86,11 +83,12 @@ Mat matmul_improved(const Mat a,const Mat b){
     ans.data=(float*)(aligned_alloc(256,sizeof(float)*a.m*b.n));
     float *c=trans(b);
     #pragma omp parallel for
-    for(size_t i=0;i<a.m;i++){
-        for(size_t j=0;j<b.n;j++){
+    for(i=0;i<a.m;i++){
+        for(j=0;j<b.n;j++){
             ans.data[i*b.n+j]=vectormul(a.data+i*a.n,c+j*b.m,a.n);
         }
     }
+    free(c);
     return ans;
 #else
     printf("No OpenMP support.\n");
@@ -117,11 +115,12 @@ Mat matmul_improved(const Mat a,const Mat b){
     ans.data=(float*)(aligned_alloc(128,sizeof(float)*a.m*b.n));
     float *c=trans(b);
     #pragma omp parallel for
-    for(size_t i=0;i<a.m;i++){
-        for(size_t j=0;j<b.n;j++){
+    for(i=0;i<a.m;i++){
+        for(j=0;j<b.n;j++){
             ans.data[i*b.n+j]=vectormul(a.data+i*a.n,c+j*b.m,a.n);
         }
     }
+    free(c);
     return ans;
 #else
     printf("No OpenMP support.\n");
@@ -149,8 +148,9 @@ float *trans(const Mat a){
     ans=(float*)malloc(sizeof(float)*a.m*a.n);
 #endif
 #endif
-    for(int i=0;i<a.n;i++){
-        for(int j=0;j<a.m;j++){
+    register size_t i,j;
+    for(i=0;i<a.n;i++){
+        for(j=0;j<a.m;j++){
             ans[i*a.m+j]=a.data[j*a.n+i];
         }
     }
@@ -159,17 +159,27 @@ float *trans(const Mat a){
 void mat_free(Mat a){
     free(a.data);
 }
-Mat newmat_aligned(size_t m,size_t n){
+Mat newmat_aligned(const size_t m,const size_t n, float *src){
     Mat ans;
     ans.m=m;
     ans.n=n;
+    size_t sz=n*m;
 #ifdef WITH_AVX2
-    ans.data=(float*)(aligned_alloc(256,sizeof(float)*m*n));
+    ans.data=(float*)(aligned_alloc(256,sizeof(float)*sz));
+    for(size_t i=0;i<sz;i+=8){
+        _mm256_store_ps(ans.data+i, _mm256_load_ps(src+i));
+    }
 #else
 #ifdef WITH_NEON
-    ans.data=(float*)(aligned_alloc(128,sizeof(float)*m*n));
+    ans.data=(float*)(aligned_alloc(128,sizeof(float)*sz));
+    for(size_t i=0;i<sz;i+=4){
+        vst1q_f32(ans.data+i, vld1q_f32(src+i));
+    }
 #else
-    ans.data=(float*)malloc(sizeof(float)*m*n);
+    ans.data=(float*)malloc(sizeof(float)*sz);
+    for(size_t i=0;i<sz;i++){
+        ans.data[i]=src[i];
+    }
 #endif
 #endif
     return ans;

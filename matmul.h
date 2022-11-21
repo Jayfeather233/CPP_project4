@@ -22,7 +22,7 @@ float* trans(const Mat a);
 void mat_free(const Mat a);
 
 //create a new matrix with aligned memory
-Mat newmat_aligned(size_t m,size_t n);
+Mat newmat_aligned(const size_t m,const size_t n, float *src);
 
 //output a matrix
 void moutput(const Mat a);
