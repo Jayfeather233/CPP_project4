@@ -11,6 +11,9 @@ typedef struct __Mat{
 
 //The plain method to calculate
 Mat matmul_plain(const Mat a,const Mat b);
+//The plain method to calculate
+Mat matmul_plain_omp_ikj(const Mat a,const Mat b);
+
 
 //Use SIMD and OpenMP to calculate
 Mat matmul_improved(const Mat a,const Mat b);

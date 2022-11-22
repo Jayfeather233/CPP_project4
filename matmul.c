@@ -1,6 +1,8 @@
 #include "matmul.h"
 #include <stdlib.h>
 
+#define WITH_AVX2
+
 #ifdef WITH_AVX2
 #include <immintrin.h>
 #endif 
@@ -23,13 +25,44 @@ Mat matmul_plain(const Mat a,const Mat b){
     ans.m=a.m;
     ans.n=b.n;
     ans.data=(float*)malloc(sizeof(float)*a.m*b.n);
+    for(size_t i=0;i<a.m;i++){
+        for(size_t k=0;k<a.n;k++){
+            ans.data[i*a.m+k]=0;
+        }
+    }
+
     size_t kk;
     for(size_t i=0;i<a.m;i++){
         for(size_t j=0;j<b.n;j++){
-            kk=i*b.n+j;
-            ans.data[kk]=0;
             for(size_t k=0;k<a.n;k++){
-                ans.data[kk]+=a.data[i*a.n+k]*b.data[k*b.n+j];
+                ans.data[i*b.n+j]+=a.data[i*a.n+k]*b.data[k*b.n+j];
+            }
+        }
+    }
+    return ans;
+}
+Mat matmul_plain_omp_ikj(const Mat a,const Mat b){
+    Mat ans;
+    if(a.n!=b.m){
+        printf("Can not multiply.\n");
+        ans.n=ans.m=-1;
+        return ans;
+    }
+    ans.m=a.m;
+    ans.n=b.n;
+    ans.data=(float*)malloc(sizeof(float)*a.m*b.n);
+    for(register size_t i=0;i<a.m;i++){
+        for(register size_t k=0;k<a.n;k++){
+            ans.data[i*a.m+k]=0;
+        }
+    }
+
+    size_t kk;
+    #pragma omp parallel for
+    for(register size_t i=0;i<a.m;i++){
+        for(register size_t k=0;k<a.n;k++){
+            for(register size_t j=0;j<b.n;j++){
+                ans.data[i*b.n+j]+=a.data[i*a.n+k]*b.data[k*b.n+j];
             }
         }
     }
@@ -37,13 +70,6 @@ Mat matmul_plain(const Mat a,const Mat b){
 }
 inline float vectormul(float *p1,float *p2,size_t nSize){
 #ifdef WITH_AVX2
-    float sum[8];
-    __m256 c = _mm256_setzero_ps();
-    for (register size_t i = 0; i < nSize; i+=8){
-        c =  _mm256_add_ps(c, _mm256_mul_ps(_mm256_load_ps(p1 + i), _mm256_load_ps(p2 + i)));
-    }
-    _mm256_store_ps(sum, c);
-    return sum[0]+sum[1]+sum[2]+sum[3]+sum[4]+sum[5]+sum[6]+sum[7];
 #else
 #ifdef WITH_NEON
     float sum[4];
@@ -64,9 +90,7 @@ inline float vectormul(float *p1,float *p2,size_t nSize){
 #endif
 }
 Mat matmul_improved(const Mat a,const Mat b){
-    register size_t i,j;
 #ifdef WITH_AVX2
-#ifdef _OPENMP
     Mat ans;
     if(a.n!=b.m){
         printf("Can not multiply.\n");
@@ -81,24 +105,44 @@ Mat matmul_improved(const Mat a,const Mat b){
     ans.m=a.m;
     ans.n=b.n;
     ans.data=(float*)(aligned_alloc(256,sizeof(float)*a.m*b.n));
-    float *c=trans(b);
-    #pragma omp parallel for
-    for(i=0;i<a.m;i++){
-        for(j=0;j<b.n;j++){
-            ans.data[i*b.n+j]=vectormul(a.data+i*a.n,c+j*b.m,a.n);
+    
+    for(register size_t i=0;i<a.m;i++){
+        for(register size_t j=0;j<a.n;j++){
+            ans.data[i*a.n+j]=0.0f;
         }
     }
-    free(c);
+    float *C=trans(b);
+    // #pragma omp parallel for
+    // for(register size_t i=0;i<a.m;i++){
+    //     for(register size_t k=0;k<a.n;k++){
+    //         __m256 ax = _mm256_set1_ps(a.data[i*a.n+k]);
+    //         for(register size_t j=0;j<b.n;j+=8){
+    //             __m256 bx = _mm256_load_ps(b.data+(k*b.n+j));
+    //             __m256 c = _mm256_load_ps(ans.data+(i*b.n+j));
+    //             c = _mm256_add_ps(c, _mm256_mul_ps(ax,bx));
+    //             _mm256_store_ps(ans.data+(i*b.n+j),c);
+    //         }
+    //     }
+    // }
+    #pragma omp parallel for
+    for(register size_t i=0;i<a.m;i++){
+        for(register size_t j=0;j<b.n;j++){
+            float sum[8];
+            __m256 ax,bx;
+            __m256 c = _mm256_setzero_ps();
+            for (register size_t k = 0; k < b.m; k+=8){
+                ax = _mm256_load_ps(a.data+ (i*b.m+k));
+                bx = _mm256_load_ps(C + (j*b.m+k));
+                c =  _mm256_add_ps(c, _mm256_mul_ps(ax, bx));
+            }
+            _mm256_store_ps(sum, c);
+            ans.data[i*b.n+j]= sum[0]+sum[1]+sum[2]+sum[3]+sum[4]+sum[5]+sum[6]+sum[7];
+        }
+    }
+    free(C);
     return ans;
-#else
-    printf("No OpenMP support.\n");
-    Mat ans;
-    ans.n=ans.m=-1;
-    return ans;
-#endif
 #else
 #ifdef WITH_NEON
-#ifdef _OPENMP
     Mat ans;
     if(a.n!=b.m){
         printf("Can not multiply.\n");
@@ -124,12 +168,6 @@ Mat matmul_improved(const Mat a,const Mat b){
     return ans;
 #else
     printf("No OpenMP support.\n");
-    Mat ans;
-    ans.n=ans.m=-1;
-    return ans;
-#endif
-#else
-    printf("No AVX or NEON support.\n");
     Mat ans;
     ans.n=ans.m=-1;
     return ans;
