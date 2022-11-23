@@ -6,9 +6,6 @@ add_definitions(-DWITH_AVX2)
 add_compile_options(-mavx2)
 add_compile_options(-lopenblas)
 
-set(CMAKE_CXX_STANDARD 11)
-add_compile_options(-O3)
-
 include_directories(/usr/local/include/openblas)
 link_libraries(/usr/local/lib/libopenblas.a)
 
@@ -18,5 +15,5 @@ ADD_EXECUTABLE(matmul main.c matmul.c)
 
 find_package(OpenMP)
 if(OpenMP_C_FOUND)
-    target_link_libraries(matmul PUBLIC OpenMP::OpenMP_C)
+   target_link_libraries(matmul PUBLIC OpenMP::OpenMP_C)
 endif()

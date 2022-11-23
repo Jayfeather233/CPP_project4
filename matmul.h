@@ -10,13 +10,18 @@ typedef struct __Mat{
 }Mat;
 
 //The plain method to calculate
-Mat matmul_plain(const Mat a,const Mat b);
-//The plain method to calculate
+Mat matmul_plain_ijk(const Mat a,const Mat b);
+//The plain method with order ikj to calculate
+Mat matmul_plain_ikj(const Mat a,const Mat b);
+//The plain method with order ikj and OpenMP to calculate
 Mat matmul_plain_omp_ikj(const Mat a,const Mat b);
 
 
 //Use SIMD and OpenMP to calculate
 Mat matmul_improved(const Mat a,const Mat b);
+
+//Use SIMD and OpenMP and blocking to calculate
+Mat matmul_improved_blocking(const Mat a,const Mat b);
 
 //transfer a Matrix to make memory access continues.
 float* trans(const Mat a);

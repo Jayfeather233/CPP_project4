@@ -17,18 +17,19 @@ float *A,*B,*C;
 
 
 int rand_state;
-inline void set_seed(int seed){
+void set_seed(int seed){
     rand_state = seed;
 }
-inline int my_rand(){
+int my_rand(){
     return rand_state = (1ll*rand_state*(1000000007)+99907) % 998244353;
 }
 
 int main(){
     struct timespec start,end;
 
-    printf("Input:M N\n");
-    if(scanf("%d%d",&N,&M)==EOF) return 1;
+    printf("Input:N\n");
+    if(scanf("%d",&N)==EOF) return 1;
+    M=N;
 
     //srand(time(0));
     set_seed(time(0));
@@ -62,15 +63,22 @@ int main(){
 
     Mat c1,c2;
     // TIME_START
-    // c1=matmul_plain(a,b);
+    // c1=matmul_plain_ijk(a,b);
     // TIME_END("plain")
     // mat_free(c1);
 
-    c1=matmul_plain_omp_ikj(a,b);
-    mat_free(c1);
+    // c1=matmul_plain_omp_ikj(a,b);
+    // mat_free(c1);
     TIME_START
     c1=matmul_plain_omp_ikj(a,b);
     TIME_END("plain_omp_ikj")
+    mat_free(c1);
+
+    c1=matmul_improved_blocking(a,b);
+    mat_free(c1);
+    TIME_START
+    c1=matmul_improved_blocking(a,b);
+    TIME_END("improved_blocking")
 
     //improved method
     TIME_START
@@ -78,7 +86,7 @@ int main(){
     TIME_END("improved");
     
     TIME_START
-    cblas_sgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,N,M,N,1.0f,A,N,B,N,0,C,N);
+    cblas_sgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,N,M,N,1.0f,A,M,B,M,0,C,M);
     TIME_END("OpenBLAS")
     
     //moutput(c2);
