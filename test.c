@@ -11,6 +11,10 @@
 #define TIME_END(NAME) clock_gettime(CLOCK_REALTIME,&end);\
         printf("%s: %ldms\n",NAME, (end.tv_sec-start.tv_sec)*1000+(end.tv_nsec-start.tv_nsec)/1000000);
 
+#define mx(a,b) ((a)>(b) ? (a) : (b))
+
+#define eq(a,b) (a>b ? a-b< mx(a,1)*1e-3 : b-a< mx(b,1)*1e-3)
+
 int N,M;
 
 float *A,*B,*C;
@@ -101,8 +105,8 @@ int main(){
     //correctness check
     int flg=1;
     for(int i=0;i<N*M&&flg;i++){
-        flg&=c1->data[i]==c2->data[i];
-        flg&=c2->data[i]==C[i];
+        //flg&=eq(c1->data[i],c2->data[i]);
+        flg&=eq(c2->data[i],C[i]);
     }
     printf("Correct?: %c\n",flg?'Y':'N');
     

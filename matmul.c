@@ -41,7 +41,6 @@ bool matmul_plain_ijk(const Mat *a, const Mat *b, Mat *ans)
     memset(ans->data, 0.0f, sizeof(float)*a->m*b->n);
 
     //simple ijk
-    size_t kk;
     for (size_t i = 0; i < a->m; i++)
     {
         for (size_t j = 0; j < b->n; j++)
@@ -83,6 +82,7 @@ bool matmul_plain_omp_ikj(const Mat *a, const Mat *b, Mat *ans)
     }
     return true;
 }
+
 bool matmul_plain_ikj(const Mat *a, const Mat *b, Mat *ans)
 {
     CHECK(a,1)
@@ -239,7 +239,8 @@ bool matmul_improved_blocking(const Mat *a, const Mat *b, Mat *ans)
 #endif
     trans(b,C);
     blocking_matmul(a->data, a->n, 0, 0, C, b->m, 0, 0, ans->data, b->n, 0, 0, a->m, b->n, a->n);
-    return ans;
+    free(C);
+    return true;
 }
 
 bool matmul_improved(const Mat *a, const Mat *b, Mat *ans)
@@ -328,7 +329,7 @@ bool matmul_improved(const Mat *a, const Mat *b, Mat *ans)
         }
     }
     free(c);
-    return ans;
+    return true;
 #else
     printf("No SIMD support.\n");
     return false;
@@ -354,7 +355,7 @@ void trans(const Mat *a, float *dist)
 void mat_free(Mat *a)
 {
     if(a){
-        free(a->data);
+        if(a->data) free(a->data);
         free(a);
     }
 }
