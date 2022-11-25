@@ -15,7 +15,6 @@ int N,M;
 
 float *A,*B,*C;
 
-
 int rand_state;
 void set_seed(int seed){
     rand_state = seed;
@@ -57,33 +56,41 @@ int main(){
         A[i]=my_rand()%10;
         B[i]=my_rand()%10;
     }
-    Mat a=newmat_aligned(N,M,A);
-    Mat b=newmat_aligned(N,M,B);
+    Mat *a=NULL,*b=NULL;
+    a=newmat_aligned(N,M,A);
+    b=newmat_aligned(M,N,B);
     TIME_END("generate");
 
-    Mat c1,c2;
+    Mat *c1=NULL,*c2=NULL;
+
     // TIME_START
-    // c1=matmul_plain_ijk(a,b);
-    // TIME_END("plain")
+    // c1=newmat_aligned(N,N,NULL);
+    // matmul_plain_ijk(a,b,c1);
+    // TIME_END("plain_ijk")
     // mat_free(c1);
 
-    // c1=matmul_plain_omp_ikj(a,b);
+    // TIME_START
+    // c1=newmat_aligned(N,N,NULL);
+    // matmul_plain_ikj(a,b,c1);
+    // TIME_END("plain_ikj")
     // mat_free(c1);
-    TIME_START
-    c1=matmul_plain_omp_ikj(a,b);
-    TIME_END("plain_omp_ikj")
-    mat_free(c1);
 
-    c1=matmul_improved_blocking(a,b);
-    mat_free(c1);
-    TIME_START
-    c1=matmul_improved_blocking(a,b);
-    TIME_END("improved_blocking")
+    // TIME_START
+    // c1=newmat_aligned(N,N,NULL);
+    // matmul_plain_omp_ikj(a,b,c1);
+    // TIME_END("plain_omp_ikj")
 
     //improved method
+    // TIME_START
+    // c1=newmat_aligned(N,N,NULL);
+    // matmul_improved(a,b,c1);
+    // TIME_END("improved");
+    //mat_free(c2);
+
     TIME_START
-    c2=matmul_improved(a,b);
-    TIME_END("improved");
+    c2=newmat_aligned(N,N,NULL);
+    matmul_improved_blocking(a,b,c2);
+    TIME_END("improved_blocking")
     
     TIME_START
     cblas_sgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,N,M,N,1.0f,A,M,B,M,0,C,M);
@@ -91,10 +98,11 @@ int main(){
     
     //moutput(c2);
     
+    //correctness check
     int flg=1;
     for(int i=0;i<N*M&&flg;i++){
-        flg&=c1.data[i]==c2.data[i];
-        flg&=c2.data[i]==C[i];
+        flg&=c1->data[i]==c2->data[i];
+        flg&=c2->data[i]==C[i];
     }
     printf("Correct?: %c\n",flg?'Y':'N');
     

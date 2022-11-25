@@ -5,6 +5,7 @@ add_definitions(-DWITH_AVX2)
 
 add_compile_options(-mavx2)
 add_compile_options(-lopenblas)
+add_compile_options(-O2)
 
 include_directories(/usr/local/include/openblas)
 link_libraries(/usr/local/lib/libopenblas.a)
