@@ -3,8 +3,6 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define WITH_AVX2
-
 #ifdef WITH_AVX2
 #include <immintrin.h>
 #endif

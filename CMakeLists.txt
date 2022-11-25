@@ -12,7 +12,7 @@ link_libraries(/usr/local/lib/libopenblas.a)
 
 project(matmul)
 
-ADD_EXECUTABLE(matmul main.c matmul.c)
+ADD_EXECUTABLE(matmul test.c matmul.c)
 
 find_package(OpenMP)
 if(OpenMP_C_FOUND)
