@@ -17,7 +17,6 @@ bool matmul_plain_ikj(const Mat *a,const Mat *b, Mat *ans);
 //The plain method with order ikj and OpenMP to calculate
 bool matmul_plain_omp_ikj(const Mat *a,const Mat *b, Mat *ans);
 
-
 //Use SIMD and OpenMP to calculate
 bool matmul_improved(const Mat *a,const Mat *b, Mat *ans);
 

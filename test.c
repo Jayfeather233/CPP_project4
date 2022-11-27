@@ -57,8 +57,8 @@ int main(){
 
     TIME_START
     for(int i=0;i<N*M;i++){
-        A[i]=my_rand()%10;
-        B[i]=my_rand()%10;
+        A[i]=1.0f*my_rand()/998244353;
+        B[i]=1.0f*my_rand()/998244353;
     }
     Mat *a=NULL,*b=NULL;
     a=newmat_aligned(N,M,A);
@@ -104,11 +104,17 @@ int main(){
     
     //correctness check
     int flg=1;
+    float maxdiff=0.0f;
     for(int i=0;i<N*M&&flg;i++){
         //flg&=eq(c1->data[i],c2->data[i]);
         flg&=eq(c2->data[i],C[i]);
+
+        maxdiff=mx(mx(maxdiff,c2->data[i]-C[i]),C[i]-c2->data[i]);
     }
+    for(int i=0;i<=10;i++) printf("%0.6f ",c2->data[i]);printf("\n");
+    for(int i=0;i<=10;i++) printf("%0.6f ",C[i]);printf("\n");
     printf("Correct?: %c\n",flg?'Y':'N');
+    printf("Maxdiff: %0.8f\n",maxdiff);
     
     mat_free(c1);
     mat_free(c2);
