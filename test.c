@@ -5,7 +5,9 @@
 #include <cblas.h>
 #include "matmul.h"
 
+//
 //This code is just for test.
+//
 
 #define TIME_START clock_gettime(CLOCK_REALTIME,&start);
 #define TIME_END(NAME) clock_gettime(CLOCK_REALTIME,&end);\
@@ -79,14 +81,14 @@ int main(){
     // TIME_END("plain_ikj")
     // mat_free(c1);
 
-    // TIME_START
-    // c1=newmat_aligned(N,N,NULL);
-    // matmul_plain_omp_ikj(a,b,c1);
-    // TIME_END("plain_omp_ikj")
+    TIME_START
+    c1=newmat_aligned(N,N,NULL);
+    matmul_plain_omp_ikj(a,b,c1);
+    TIME_END("plain_omp_ikj")
 
     //improved method
     // TIME_START
-    // c1=newmat_aligned(N,N,NULL);
+    // c2=newmat_aligned(N,N,NULL);
     // matmul_improved(a,b,c1);
     // TIME_END("improved");
     //mat_free(c2);
@@ -106,7 +108,7 @@ int main(){
     int flg=1;
     float maxdiff=0.0f;
     for(int i=0;i<N*M&&flg;i++){
-        //flg&=eq(c1->data[i],c2->data[i]);
+        flg&=eq(c1->data[i],c2->data[i]);
         flg&=eq(c2->data[i],C[i]);
 
         maxdiff=mx(mx(maxdiff,c2->data[i]-C[i]),C[i]-c2->data[i]);
